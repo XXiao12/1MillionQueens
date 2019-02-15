@@ -1,18 +1,15 @@
 import numpy as np 
-# from nqueens_bak import nQueens
 from progressbar import update_progress
-# np.random.seed(0)
+
 class board:
     def __init__(self, size=8, C1=0.45, C2=32, randinit=True, threshold=20,with_progressbar_when_initializing=False):
         self.N = size 
-        # self.threshold = threshold
         ### TODO: dtype reinitialize, reduce memory
         self.bd = np.arange(self.N, dtype=np.uint32) ### because len(bin(1000000)) < 32
 
         self.dp = np.zeros(2*self.N, dtype=np.uint32) # [2 .. 2*N-2]
         # if use greedy init, dtype can be set uint8 or even smaller
         self.dn = np.zeros(2*self.N, dtype=np.uint32) # careful with the indexing
-        # self.attack = -np.ones(self.N) # row indeces of queens in array queen that are attacked by other queens
         self.attack = []
         # because we use index starting from 0, so the attack matrix is initialized with -1 instead of 0 (0 means column one)
         self.limit = 0
@@ -48,8 +45,6 @@ class board:
                 else:
                     print(' 0',end='')
             print()
-        
-        # print(' '*4, end='') 
 
         for i in range(0,2*self.N):
             print('{: >2d}'.format(self.dn[i]),end='') 
@@ -61,13 +56,10 @@ class board:
             print("attack list is {}".format(self.attack))
             
     def greedyinit(self,):
-        # pass
         np.random.shuffle(self.bd) 
-        # flags = np.zeros(self.N, dtype=np.bool) # all False
-        # choices = np.arange(self.N)
         reached = False 
         self.threshold = 100
-        print("greedy initialization")
+        #print("greedy initialization")
         for i in range(self.N):
             if self.with_progressbar_when_initializing:
                 update_progress(i/self.N) 
@@ -87,10 +79,8 @@ class board:
                             foundit = True
                             break 
                         if j == self.threshold-1:
-                            # print("sldjflsjfas;djf;lsdfj;alskdjfsa;djfs;aokfsalkdjf;asldfja;sldkfjl;sdf")
                             reached = True
                             break 
-                        # reached = True if j == threshold-1
 
                     if not foundit:
                         self.dp[self.N-self.bd[i]+i] += 1
@@ -98,8 +88,7 @@ class board:
             else:
                 self.dp[self.N-self.bd[i]+i] += 1
                 self.dn[self.bd[i]+i+1] += 1
-        # self.dp[self.N-self.bd[i]+i] += 1
-        # self.dn[self.bd[i]+i+1] += 1
+
         total = 0
         for i in self.dn:
             if i > 1:
@@ -111,16 +100,9 @@ class board:
         self.compute_attack_matrix()
         
     def randinit(self,):
-        # self.bd = np.random.permutation(self.bd)
         np.random.shuffle(self.bd) 
-        # self.dp = np.zeros(2*self.N, dtype=np.uint32) # [2 .. 2*N-2]
-        # self.dp.fill(0)
-        # if use greedy init, dtype can be set uint8 or even smaller
-        # self.dn = np.zeros(2*self.N, dtype=np.uint32) # careful with the indexing
-        # self.dn.fill(0)
         self.compute_collisions()
         self.compute_attack_matrix()
-        # print(self.collisions)
 
 
     def compute_attack_matrix(self,):
@@ -162,11 +144,10 @@ class board:
     def swap_ok(self,i,j):
         self._old = self.get8collisions(i,j)
         self._perform_swap(i,j)
-        # self.printall()
         self._new = self.get8collisions(i,j)
         self._perform_swap(j,i)
-        # print("old is {}, new is {}".format(old,new))
         return self._new < self._old
+
     def _perform_swap(self, i,j):
         self.dp[self.N-self.bd[i]+i] -= 1
         self.dn[self.bd[i]+i+1] -= 1
@@ -178,50 +159,25 @@ class board:
         self.dn[self.bd[j]+i+1] += 1
         self.bd[i], self.bd[j] = self.bd[j], self.bd[i] 
     def perform_swap(self, i,j):
-        # self._perform_swap(i,j)
-        # self._old = self.get8collisions(i,j)
-        # print(old)
         self._perform_swap(i,j)
-        # self._new = self.get8collisions(i,j)
-        # print(new)
-        # self._perform_swap(j,i)
-        self.collisions = self.collisions - self._old + self._new 
-        # print(self.collisions)
-        # self.compute_collisions()
-        # print(self.collisions)
-        # print("上面是两个 collision ") 
+        self.collisions = self.collisions - self._old + self._new
 
     def repair(self, withprogressbar=False):
-        
         self.iter_num = 0
         while self.collisions > 0:
             self.iter_num += 1
-            # print("enter first loop")
             self.randinit() 
             self.collisions = self.compute_collisions()
-            # print(self.collisions)
             self.limit = self.collisions * self.C1
-            # self.compute_attacks() 
             self.loopcount = 0
-            # print("iternum = {}".format(self.iter_num))
-            print("\niteration {}".format(self.iter_num))
+            #print("\niteration {}".format(self.iter_num))
             while self.loopcount <= self.C2 * self.N:
-                # print("loop count = {}, self.C2 * self.N = {}".format(self.loopcount,self.C2 * self.N))
-                # print(float(self.loopcount) / (self.C2 * self.N))
                 if withprogressbar:
                     update_progress(float(self.loopcount) / (self.C2 * self.N))
-                # print("enter second loop")
-                # for k in range(self.number_of_attacks):
-                # print(self.attack)
                 for i in self.attack:
-                    # print("third loop's {}".format(i))
                     j = np.random.randint(0,self.N) # choose j
                     if self.swap_ok(i,j):
-                        # print("swap ok@@ ")
-                        # self.printall()
                         self.perform_swap(i,j) # update collision matrix and board 
-                        # self.collisions -= diff # update collision 
-                        # print("see if collision is wrong",self.collisions)
                         if self.collisions == 0:
                             return
                         if self.collisions < self.limit:
@@ -229,7 +185,6 @@ class board:
                             self.compute_attack_matrix()
                     
                 self.loopcount += len(self.attack)
-            # break
         return True
 
 
